@@ -36,7 +36,7 @@ public class Main {
         String tableName = "users";
         String schemaName = "raw";
         String catalogName ="adls2";
-
+        LOGGER.info("Started");
 
         Properties properties = new Properties();
         var envFile = Paths.get("src/main/resources/config.properties");
@@ -61,10 +61,10 @@ public class Main {
         );
         TableIdentifier tableIdentifier = TableIdentifier.of(Namespace.of(schemaName), tableName);
 
-//        hiveCatalog.createTable(tableIdentifier, schema); // Create the table
+        hiveCatalog.createTable(tableIdentifier, schema); // Create the table
         Table table = hiveCatalog.loadTable(tableIdentifier);
         LOGGER.info("table name: {}", table.name());
-//        LOGGER.info("table location: {}", table.location()); // table location
+        LOGGER.info("table location: {}", table.location()); // table location
 
 //        hiveCatalog.dropTable(tableIdentifier); // drop table
 
@@ -73,7 +73,7 @@ public class Main {
         try{
 //              write(table, schema, records); // write to iceberg table
                LOGGER.info("Read data from iceberg table: {}", table.name());
-              read(table); // read from iceberg table
+//              read(table); // read from iceberg table
         }catch (Exception ex){
             LOGGER.error(ex.getMessage(), ex);
         }
@@ -118,7 +118,6 @@ public class Main {
         CloseableIterable<Record> result = IcebergGenerics.read(table).build();
         result.forEach(System.out::println);
     }
-
 
     private static HiveCatalog getHiveCatalog(String catalogName, String baseURL, String storageAccountName, String accountKey, String thriftURL) {
         HiveConf hiveConf = new HiveConf();
