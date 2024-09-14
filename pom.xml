@@ -17,7 +17,9 @@
 
         <org.apache.hadoop.version>3.3.5</org.apache.hadoop.version>
         <org.apache.hive.version>4.0.0</org.apache.hive.version>
-        <com.azure.version>12.26.0</com.azure.version>
+        <!--        <com.azure.version>12.26.0</com.azure.version>-->
+        <com.azure.version>12.24.1</com.azure.version>
+
         <org.apache.iceberg.version>1.2.1</org.apache.iceberg.version>
         <org.apache.iceberg.azure.version>1.5.2</org.apache.iceberg.azure.version>
 
@@ -40,7 +42,11 @@
             <artifactId>azure-storage-blob</artifactId>
             <version>${com.azure.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.azure</groupId>
+            <artifactId>azure-storage-file-datalake</artifactId>
+            <version>12.19.0</version>
+        </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-azure</artifactId>
@@ -74,7 +80,7 @@
                 </exclusion>
                 <exclusion>
                     <groupId>org.apache.logging.log4j</groupId>
-<!--                    <artifactId>slf4j-api</artifactId>-->
+                    <!--                    <artifactId>slf4j-api</artifactId>-->
                     <artifactId>log4j-web</artifactId>
 
                 </exclusion>
@@ -324,11 +330,11 @@
             <artifactId>commons-cli</artifactId>
             <version>1.5.0</version>
         </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>${org.slf4j}</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.slf4j</groupId>-->
+<!--            <artifactId>slf4j-api</artifactId>-->
+<!--            <version>${org.slf4j}</version>-->
+<!--        </dependency>-->
 
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -337,22 +343,11 @@
         </dependency>
 
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>${log4j.log4j}</version>
-        </dependency>
-        <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
             <version>2.19.0</version>
         </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <version>2.19.0</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -364,12 +359,7 @@
             <artifactId>lombok</artifactId>
             <version>1.18.30</version>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>org.junit.jupiter</groupId>-->
-<!--            <artifactId>junit-jupiter</artifactId>-->
-<!--            <version>RELEASE</version>-->
-<!--            <scope>test</scope>-->
-<!--        </dependency>-->
+
 
     </dependencies>
 
@@ -398,7 +388,9 @@
                         </archive>
                     </configuration>
                 </plugin>
+
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-assembly-plugin</artifactId>
                     <version>3.3.0</version>
                     <configuration>
@@ -409,13 +401,8 @@
                             <manifest>
                                 <mainClass>com.merasdecode.iceberg_api.Main</mainClass>
                             </manifest>
-                            <manifestEntries>
-                                <Multi-Release>true</Multi-Release>
-                            </manifestEntries>
                         </archive>
-
                     </configuration>
-
                     <executions>
                         <execution>
                             <phase>package</phase>
@@ -429,5 +416,6 @@
             </plugins>
         </pluginManagement>
     </build>
+
 
 </project>

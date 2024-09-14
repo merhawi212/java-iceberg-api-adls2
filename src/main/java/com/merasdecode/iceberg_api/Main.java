@@ -43,14 +43,14 @@ public class Main {
         try (var inputStream = Files.newInputStream(envFile)) {
             properties.load(inputStream);
         }catch (Exception ex){
-            System.err.println(ex.getMessage());
+            LOGGER.error(ex.getMessage());
         }
         String accountKey =  properties.get("account.key").toString();
         String storageAccountName =  properties.get("storage.account.name").toString();
         String containerName = properties.get("container.name").toString();
         String thriftURL = properties.get("thrift.url").toString();
         String baseURL = String.format("abfss://%s@%s.dfs.core.windows.net", containerName, storageAccountName);
-
+//        abfs://<container name>@<storage account name>.dfs.core.windows.net
 
         HiveCatalog hiveCatalog = getHiveCatalog(catalogName, baseURL, storageAccountName, accountKey, thriftURL);
         // Define the schema for the table
@@ -61,7 +61,7 @@ public class Main {
         );
         TableIdentifier tableIdentifier = TableIdentifier.of(Namespace.of(schemaName), tableName);
 
-        hiveCatalog.createTable(tableIdentifier, schema); // Create the table
+//        hiveCatalog.createTable(tableIdentifier, schema); // Create the table
         Table table = hiveCatalog.loadTable(tableIdentifier);
         LOGGER.info("table name: {}", table.name());
         LOGGER.info("table location: {}", table.location()); // table location
@@ -71,11 +71,13 @@ public class Main {
         var records = createGenericRecords((schema));
 //        records.forEach(record -> System.out.println(record.toString())); // Display generated records
         try{
-//              write(table, schema, records); // write to iceberg table
-               LOGGER.info("Read data from iceberg table: {}", table.name());
 //              read(table); // read from iceberg table
+            write(table, schema, records); // write to iceberg table
+            LOGGER.info("Read data from iceberg table: {}", table.name());
+
         }catch (Exception ex){
             LOGGER.error(ex.getMessage(), ex);
+//            System.out.println(ex.getMessage());
         }
     }
     private static List<GenericRecord> createGenericRecords(Schema schema){
@@ -87,11 +89,11 @@ public class Main {
         String[] dob  = {"1996-12-05", "1996-11-25", "1997-01-09", "1998-10-03", "1998-11-04"};
 
         IntStream.range(0, names.length).forEach(i ->{
-                GenericRecord record = GenericRecord.create(schema);
-                record.setField("name", names[i]); // Assumes schema has "name" field
-                record.setField("email", emails[i]); // Assumes schema has "email" field
-                record.setField("dob", LocalDate.parse(dob[i])); // Assumes schema has "dob" field
-                records.add(record);
+            GenericRecord record = GenericRecord.create(schema);
+            record.setField("name", names[i]); // Assumes schema has "name" field
+            record.setField("email", emails[i]); // Assumes schema has "email" field
+            record.setField("dob", LocalDate.parse(dob[i])); // Assumes schema has "dob" field
+            records.add(record);
         });
         return records;
     }
@@ -99,15 +101,16 @@ public class Main {
     private static void write(Table table, Schema schema, List<GenericRecord> records) throws IOException {
         String  randomFileName = UUID.randomUUID().toString();
         String fileExtension = ".parquet";
-        String dataFolder = "/data";
+        String dataFolder = "/data/";
 
         String filePath = table.location() + dataFolder + randomFileName + fileExtension;
+        LOGGER.info("filePath: {}", filePath);
         OutputFile file = table.io().newOutputFile(filePath);
 
         org.apache.iceberg.io.DataWriter<GenericRecord> dataWriter = Parquet.writeData(file).schema(schema)
-                                                                .createWriterFunc(GenericParquetWriter::buildWriter)
-                                                                .overwrite().withSpec(PartitionSpec.unpartitioned())
-                                                                .build();
+                .createWriterFunc(GenericParquetWriter::buildWriter)
+                .overwrite().withSpec(PartitionSpec.unpartitioned())
+                .build();
         for (GenericRecord record : records)
             dataWriter.write(record);
         dataWriter.close();
@@ -121,8 +124,13 @@ public class Main {
 
     private static HiveCatalog getHiveCatalog(String catalogName, String baseURL, String storageAccountName, String accountKey, String thriftURL) {
         HiveConf hiveConf = new HiveConf();
+        LOGGER.info("base url is: {}", baseURL);
         hiveConf.set("fs.defaultFS", baseURL);
+
         hiveConf.set(String.format("fs.azure.account.key.%s.dfs.core.windows.net", storageAccountName), accountKey);
+//        hiveConf.set("iceberg.io-impl", "org.apache.iceberg.azure.adlsv2.ADLSFileIO");
+//        hiveConf.set("fs.abfs.impl", "org.apache.hadoop.fs.azurebfs.AzureBlobFileSystem");
+//        hiveConf.set("fs.AbstractFileSystem.abfs.impl", "org.apache.hadoop.fs.azurebfs.Abfs");
         HiveCatalog hiveCatalog = new HiveCatalog();
         hiveCatalog.setConf(hiveConf);
         hiveCatalog.initialize(catalogName, getCatalogProperties(storageAccountName, accountKey, baseURL, thriftURL));

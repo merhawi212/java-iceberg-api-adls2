@@ -32,3 +32,5 @@ target
 .idea
 META-INF
 *.iml
+pom2.xml
+temp-pom.xml
