@@ -1,4 +1,4 @@
-package com.merasdecode.iceberg_api;
+package com.datacraftbymerhawi.java_iceberg_api_adls2;
 
 import lombok.var;
 import org.apache.hadoop.hive.conf.HiveConf;
@@ -33,24 +33,37 @@ public class Main {
 
     public static void main(String[] args) {
 
-        String tableName = "users";
-        String schemaName = "raw";
-        String catalogName ="adls2";
+//        String tableName = "users4";
+//        String schemaName = "raw";
+//        String catalogName ="adls2";
         LOGGER.info("Started");
+
+        String accountKey = "none";
+        String storageAccountName = "none";
+        String containerName = "none";
+        String thriftURL = "none";
+        String catalogName = "none";
+        String schemaName = "none";
+        String tableName = "none";
 
         Properties properties = new Properties();
         var envFile = Paths.get("src/main/resources/config.properties");
         try (var inputStream = Files.newInputStream(envFile)) {
             properties.load(inputStream);
+
+             accountKey =  properties.get("account.key").toString();
+             storageAccountName =  properties.get("storage.account.name").toString();
+             containerName = properties.get("container.name").toString();
+             thriftURL = properties.get("thrift.url").toString();
+             catalogName = properties.get("catalog.name").toString();
+             schemaName = properties.get("schema.name").toString();
+             tableName = properties.get("table.name").toString();
         }catch (Exception ex){
             LOGGER.error(ex.getMessage());
         }
-        String accountKey =  properties.get("account.key").toString();
-        String storageAccountName =  properties.get("storage.account.name").toString();
-        String containerName = properties.get("container.name").toString();
-        String thriftURL = properties.get("thrift.url").toString();
+
+
         String baseURL = String.format("abfss://%s@%s.dfs.core.windows.net", containerName, storageAccountName);
-//        abfs://<container name>@<storage account name>.dfs.core.windows.net
 
         HiveCatalog hiveCatalog = getHiveCatalog(catalogName, baseURL, storageAccountName, accountKey, thriftURL);
         // Define the schema for the table
@@ -60,8 +73,14 @@ public class Main {
                 Types.NestedField.optional(3, "dob", Types.DateType.get())
         );
         TableIdentifier tableIdentifier = TableIdentifier.of(Namespace.of(schemaName), tableName);
+ //     hiveCatalog.createTable(tableIdentifier, schema); // Create the table, table location will schema (DB) location/tableName
 
-//        hiveCatalog.createTable(tableIdentifier, schema); // Create the table
+
+//        To customize the table location e.g. schema location/<custom dir>/tableName
+//        String tableLocation = getTableLocation(tableName, getSchemaMetadata(hiveCatalog, Namespace.of(schemaName)));
+//        LOGGER.info("table location: {}",tableLocation);
+//        hiveCatalog.createTable(tableIdentifier, schema, null, tableLocation, null) ;
+
         Table table = hiveCatalog.loadTable(tableIdentifier);
         LOGGER.info("table name: {}", table.name());
         LOGGER.info("table location: {}", table.location()); // table location
@@ -71,13 +90,13 @@ public class Main {
         var records = createGenericRecords((schema));
 //        records.forEach(record -> System.out.println(record.toString())); // Display generated records
         try{
-//              read(table); // read from iceberg table
+            LOGGER.info("Write data to iceberg table: {}", table.name());
             write(table, schema, records); // write to iceberg table
             LOGGER.info("Read data from iceberg table: {}", table.name());
+            read(table); // read from iceberg table
 
         }catch (Exception ex){
             LOGGER.error(ex.getMessage(), ex);
-//            System.out.println(ex.getMessage());
         }
     }
     private static List<GenericRecord> createGenericRecords(Schema schema){
@@ -111,8 +130,10 @@ public class Main {
                 .createWriterFunc(GenericParquetWriter::buildWriter)
                 .overwrite().withSpec(PartitionSpec.unpartitioned())
                 .build();
+
         for (GenericRecord record : records)
             dataWriter.write(record);
+
         dataWriter.close();
         DataFile dataFile = dataWriter.toDataFile();
         table.newAppend().appendFile(dataFile).commit();
@@ -123,14 +144,18 @@ public class Main {
     }
 
     private static HiveCatalog getHiveCatalog(String catalogName, String baseURL, String storageAccountName, String accountKey, String thriftURL) {
+
+        org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
+        conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
+        conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
+
         HiveConf hiveConf = new HiveConf();
         LOGGER.info("base url is: {}", baseURL);
+        hiveConf.addResource(conf);
         hiveConf.set("fs.defaultFS", baseURL);
-
         hiveConf.set(String.format("fs.azure.account.key.%s.dfs.core.windows.net", storageAccountName), accountKey);
-//        hiveConf.set("iceberg.io-impl", "org.apache.iceberg.azure.adlsv2.ADLSFileIO");
-//        hiveConf.set("fs.abfs.impl", "org.apache.hadoop.fs.azurebfs.AzureBlobFileSystem");
-//        hiveConf.set("fs.AbstractFileSystem.abfs.impl", "org.apache.hadoop.fs.azurebfs.Abfs");
+
+//        hiveCatalog
         HiveCatalog hiveCatalog = new HiveCatalog();
         hiveCatalog.setConf(hiveConf);
         hiveCatalog.initialize(catalogName, getCatalogProperties(storageAccountName, accountKey, baseURL, thriftURL));
@@ -145,5 +170,17 @@ public class Main {
         catalogProperties.put(AzureProperties.ADLS_SHARED_KEY_ACCOUNT_KEY, accountKey);
         catalogProperties.put(AzureProperties.ADLS_SHARED_KEY_ACCOUNT_NAME, storageAccountName);
         return catalogProperties;
+    }
+
+    public static Map<String, String> getSchemaMetadata(HiveCatalog catalog, Namespace namespace){
+        return catalog.loadNamespaceMetadata(namespace);
+    }
+    private static String getTableLocation(String tableName, Map<String, String> schemaMetadata){
+        String schemaLocation = hiveMetastoreDatabaseLocation(schemaMetadata);
+        LOGGER.info("Schema Location: {}", schemaMetadata);
+        return schemaLocation + "in/" +tableName; // custom table location
+    }
+    public  static String hiveMetastoreDatabaseLocation(Map<String, String> schemaMetadata){
+        return schemaMetadata.get("location");
     }
 }
