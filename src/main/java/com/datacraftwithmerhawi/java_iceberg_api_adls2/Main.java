@@ -1,4 +1,4 @@
-package com.datacraftbymerhawi.java_iceberg_api_adls2;
+package com.datacraftwithmerhawi.java_iceberg_api_adls2;
 
 import lombok.var;
 import org.apache.hadoop.hive.conf.HiveConf;
@@ -33,35 +33,25 @@ public class Main {
 
     public static void main(String[] args) {
 
-//        String tableName = "users4";
-//        String schemaName = "raw";
-//        String catalogName ="adls2";
-        LOGGER.info("Started");
 
-        String accountKey = "none";
-        String storageAccountName = "none";
-        String containerName = "none";
-        String thriftURL = "none";
-        String catalogName = "none";
-        String schemaName = "none";
-        String tableName = "none";
+        LOGGER.info("Started....");
 
         Properties properties = new Properties();
-        var envFile = Paths.get("src/main/resources/config.properties");
+        var envFile = Paths.get("src/main/resources/config-dev.properties");
         try (var inputStream = Files.newInputStream(envFile)) {
             properties.load(inputStream);
 
-             accountKey =  properties.get("account.key").toString();
-             storageAccountName =  properties.get("storage.account.name").toString();
-             containerName = properties.get("container.name").toString();
-             thriftURL = properties.get("thrift.url").toString();
-             catalogName = properties.get("catalog.name").toString();
-             schemaName = properties.get("schema.name").toString();
-             tableName = properties.get("table.name").toString();
         }catch (Exception ex){
             LOGGER.error(ex.getMessage());
         }
 
+        String accountKey =  properties.get("account.key").toString();
+        String storageAccountName =  properties.get("storage.account.name").toString();
+        String containerName = properties.get("container.name").toString();
+        String thriftURL = properties.get("thrift.url").toString();
+        String catalogName = properties.get("catalog.name").toString();
+        String schemaName = properties.get("schema.name").toString();
+        String tableName = properties.get("table.name").toString();
 
         String baseURL = String.format("abfss://%s@%s.dfs.core.windows.net", containerName, storageAccountName);
 
@@ -73,7 +63,7 @@ public class Main {
                 Types.NestedField.optional(3, "dob", Types.DateType.get())
         );
         TableIdentifier tableIdentifier = TableIdentifier.of(Namespace.of(schemaName), tableName);
- //     hiveCatalog.createTable(tableIdentifier, schema); // Create the table, table location will schema (DB) location/tableName
+ //     hiveCatalog.createTable(tableIdentifier, schema); // Create the table, table location will be schema(DB)_location/tableName
 
 
 //        To customize the table location e.g. schema location/<custom dir>/tableName
@@ -99,6 +89,7 @@ public class Main {
             LOGGER.error(ex.getMessage(), ex);
         }
     }
+
     private static List<GenericRecord> createGenericRecords(Schema schema){
         List<GenericRecord> records = new ArrayList<>();
 
