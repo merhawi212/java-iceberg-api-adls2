@@ -112,9 +112,9 @@ public  static String hiveMetastoreDatabaseLocation(Map<String, String> schemaMe
   ```
 ## Example Output
 Generated Sample Data:
-|----------------------------------------------------------------|
+
 | **Name**        |   **Email**	            | **Date of Birth** |
-|;----------------|;------------------------|;------------------|
+|-----------------|-------------------------|-------------------|
 | Habtom Berhe    | habtomberhe@gmail.com   |	1996-12-05      |
 | John Smith	  | smith.john@gmail.com    |	1996-11-25      |
 | Semhar Tedros	  | semhar.tedros@gmail.com |	1997-01-09      |
