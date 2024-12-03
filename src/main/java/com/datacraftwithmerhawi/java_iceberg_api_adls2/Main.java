@@ -37,7 +37,7 @@ public class Main {
         LOGGER.info("Started....");
 
         Properties properties = new Properties();
-        var envFile = Paths.get("src/main/resources/config-dev.properties");
+        var envFile = Paths.get("src/main/resources/config.properties");
         try (var inputStream = Files.newInputStream(envFile)) {
             properties.load(inputStream);
 

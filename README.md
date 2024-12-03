@@ -62,8 +62,8 @@ You can run the application using the following command:
 ## How It Works 🔍
 
 ### 1. Establishing Connection 🌐
-The application configures a connection to ADLS2 and Hive Metastore (HMS) using the provided config.properties.
-- **Constructs a base URL for ADLS2:**
+The application configures - a connection to ADLS2 and Hive Metastore (HMS) using the provided config.properties.
+- **Construct a base URL for ADLS2:**
 ```
     String baseURL = String.format("abfss://%s@%s.dfs.core.windows.net", containerName, storageAccountName); 
 ```
